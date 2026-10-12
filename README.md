@@ -1,5 +1,9 @@
 TERMINAL INSTRUCTIONS
 
+Generate SSH/GPG key for github (so that it can authenticate you when you push
+your changes). You can follow the instructions here:
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
+
 First, clone this repository to your local machine using the following command:
 
 ```bash
@@ -35,3 +39,7 @@ will need on his computer). To do that, you can run the following command:
 ```bash
 git pull
 ```
+
+ROLES
+Ulvi - PI, input and helping with either of the phases
+Kobe - head of the Output & Errors oversight committee
