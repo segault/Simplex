@@ -41,7 +41,7 @@ git pull
 ```
 
 ROLES
-Ulvi - PI, input and helping with either of the phases
-Javi - Phase I
-Aidan - Phase II
-Kobe - head of the Output & Errors oversight committee
+- Ulvi - PI, input and helping with either of the phases
+- Javi - Phase I
+- Aidan - Phase II
+- Kobe - head of the Output & Errors oversight committee
