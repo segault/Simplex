@@ -60,6 +60,24 @@ def get_input():
 
     return build_tableau(objective_coeffs, constraints)
 
+# PHASE I - JAVI/ULVI
+
+def forward_elimination(m, n):
+    for row1 in range(0, n):
+        # Normalize the pivot row
+        for col in range(row1+1, len(m[0])):
+            m[row1][col] /= m[row1][row1]
+
+        # Eliminate the entries below the pivot
+        # ratio = m[row2][row1] / m[row1][row1]
+        for row2 in range(row1+1, n):
+            for col in range(row1+1, len(m[0])):
+                m[row2][col] -= m[row2][row1] * m[row1][col]
+
+
+
+    return m
+
 def check_negative(tableau):
     for i in range(len(tableau[0])):
         if tableau[-1][i] < 0:
@@ -67,20 +85,30 @@ def check_negative(tableau):
     return False
 
 def phaseI(tableau):
-    ratios = []
+    ratios = {}
     for i in range(len(tableau[0])):
         if tableau[-1][i] < 0: #leftmost first
             break
 
     #compare ratios
     for j in range(len(tableau)-1):
-        if tableau[j][i] > 0 and tableau[j][-1] > 0:
-            ratios.append(tableau[j][i]/tableau[j][-1])
+        if tableau[j][i] > 0:
+            ratios[(j, i)] = tableau[j][-1]/tableau[j][i]
             print(f'added ratio: {ratios[len(ratios)-1]}')
 
     if len(ratios) == 0:
         print("PHASE I: No valid ratios found. The problem is unbounded.")
         exit(1)
+
+    #lowest ratio
+    lowest_ratio = min(ratios)
+    index = ratios.index(lowest_ratio)
+
+    #pivot
+    pivot = tableau[ratios][i]
+    for i in range(len(tableau[0])):
+        tableau[index]
+
 
     return tableau
 
@@ -90,5 +118,5 @@ if __name__ == "__main__":
     show_tableau(tableau)
 
     tableau2 = tableau.copy()
-    while check_negative(tableau):
+    while check_negative(tableau2):
         tableau2 = phaseI(tableau2)
