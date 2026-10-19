@@ -82,6 +82,8 @@ def phaseI(tableau):
         print("PHASE I: No valid ratios found. The problem is unbounded.")
         exit(1)
 
+    return tableau
+
 
 if __name__ == "__main__":
     tableau = get_input()
