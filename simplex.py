@@ -1,6 +1,4 @@
 #INPUT - Ulvi
-decisions = 0 # silly to make it global but i'm tired
-max = False
 
 def show_tableau(tableau):
     print("\nTableau:")
@@ -9,60 +7,74 @@ def show_tableau(tableau):
             print(f"{col:>8.2f}", end=" ")
         print()
 
-def build_tableau(objective_coeffs, constraints):
-    global max
-    tableau = []
-    j = 0
-    for i in range(len(constraints)):
-        tableau.append(constraints[i][0:-1])
+def standardize(consts, coeffs):
+    op = coeffs[-2].lower()
+    coeffs.pop(-2)
+    coeffs = [float(x) for x in coeffs]
 
-        slack = [0] * len(constraints)
-        slack[i] = 1
-        tableau[j] += slack
-
-        tableau[j].append(constraints[i][-1])
-        j+=1
-
-    if max is True:
-        for i in range(len(objective_coeffs)):
-            objective_coeffs[i] *= -1
-
-    tableau.append(objective_coeffs + [0] * len(constraints) + [0])
-    return tableau
+    if op == "e":
+        consts.append(coeffs); # <=
+        consts.append([-x for x in coeffs]) # >= --> <=
+    elif op == "ge":
+        consts.append([-x for x in coeffs]) # >= --> <=
+    else:
+        consts.append(coeffs)
 
 def get_input():
-    global max
     global decisions
+    global max
+    max = input("Is this a maximization problem? (y/n): ").strip().lower() == 'y'
+    decisions = int(input("Enter the number of decision variables: "))
+    count = int(input("Enter the number of constraints: "))
+    constraints = []
+    objective = list(map(float, input("Enter the coefficients and constant (if applicable) \
+of the objective function (space-separated):\nO: ").split()))
 
-    try:
-        ismax = input("is this a maximum? (Y/n): ")
-        if ismax.lower() == "y":
-            max = True
+    # standardize objective
+    # moving all terms to the left (given like C = 3x + 3y) negates them
+    # but then if minimizing, we negate again to make it a max,
+    # therefore only the max really gets negated
+    # if max is True:
+    #     objective = [-x for x in objective]
+    # else:
+    #     if len(objective) > decisions:
+    #         objective[-1] *= -1 # if there's a constant, it's negated. why?
+    #
+    if len(objective) == decisions + 1:
+        constant = objective.pop()
+        if not max:
+            constant *= -1 # if there's a constant, it's negated. why?
+    else:
+        constant = 0.0
 
-        objective_coeffs = []
-        constraints = []
-        objective_coeffs = list(map(int, input("Enter the coefficients for the objective function\n> ").split()))
-        decisions = len(objective_coeffs)
+    if max is True:
+        objective = [-x for x in objective]
 
-        print(f'Enter the coefficients and RHS for the constraints\nType "done" when finished.')
-        while (True):
-            input_str = input("> ")
-            if input_str.lower() == "done":
-                break
-            input_list = input_str.split()
-            if len(input_list) != decisions + 1:
-                print(f"Invalid input. Please enter {decisions} coefficients followed by the RHS value.")
-                continue
-            constraints.append(list(map(int, input_list)))
+    print("Enter constraints, relation (e/ge/le), and RHS (space separated)\n \
+e = equals | ge = greater than/equals | le = less than/equals: ")
+    for i in range(count):
+        coeffs = list(map(str, input(f"{i+1}: ").split()))
+        standardize(constraints, coeffs)
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        exit(1)
+    tableau = []
+    m = len(constraints)
 
-    return build_tableau(objective_coeffs, constraints)
+    for i in range(m):
+        constraint = constraints[i]
+
+        slack = [0] * m
+        slack[i] = 1
+
+        row = constraint[:-1] + slack + [constraint[-1]]
+        tableau.append(row)
+
+    tableau.append(objective + [0] * m + [constant])
+
+    return tableau
+
 
 def check_negative(tableau):
-    for i in range(len(tableau[0])):
+    for i in range(len(tableau[0])-1):
         if tableau[-1][i] < 0:
             return True
     return False
@@ -109,7 +121,7 @@ def phaseI(tableau):
             ]
 
 def check_dual(tableau):
-    for i in range(len(tableau)):
+    for i in range(len(tableau)-1):
         if tableau[i][-1] < 0:
             return True
     return False
@@ -157,6 +169,7 @@ def phaseII(tableau):
     return tableau
 
 def extract_soln(tableau):
+    global max
     global decisions
     solution = [0.0] * decisions
     eps = 1e-9
@@ -176,6 +189,8 @@ def extract_soln(tableau):
                 break
 
     optimum = tableau[-1][-1]
+    if not max:
+        optimum = -optimum
     return tuple(solution), optimum
 
 
@@ -183,11 +198,21 @@ if __name__ == "__main__":
     tableau = get_input()
     show_tableau(tableau)
 
-    while check_negative(tableau):
-        phaseI(tableau)
+    rhs_feasible = all(row[-1] >= 0 for row in tableau[:-1])
+    dual_feasible = all(x >= 0 for x in tableau[-1][:-1])
 
-    while check_dual(tableau):
-        phaseII(tableau)
+    if rhs_feasible:
+        while check_negative(tableau):
+            phaseI(tableau)
+
+    elif dual_feasible:
+        while check_dual(tableau):
+            phaseII(tableau)
+    else:
+        while check_negative(tableau):
+            phaseI(tableau)
+        while check_dual(tableau):
+            phaseII(tableau)
 
     coords, optm = extract_soln(tableau)
     print(f"\nOptimal solution found: {optm:.2f} at ")
